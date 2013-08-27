@@ -15,7 +15,7 @@ class RestComponent extends Component {
     const DEFAULT_EXT = 'xml';
     const DEFAULT_LIMIT = 50;
     const MAX_LIMIT = 500;
-    private static $_authorizedParameters = array('conditions', 'order', 'page', 'limit');
+    private static $_authorizedParameters = array('conditions', 'order', 'page', 'limit', 'joins');
     private $_controller = null;
     private $_settings = null;
     private $_requestData = null;
