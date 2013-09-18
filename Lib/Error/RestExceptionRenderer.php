@@ -15,6 +15,7 @@ App::uses('ExceptionRenderer', 'Error');
 class RestExceptionRenderer extends ExceptionRenderer
 {
     const DEFAULT_EXT = 'xml';
+    private $_authorizedExt = array('xml', 'json');
 
     /**
      * render method is called to display all CakeError errors
@@ -32,9 +33,8 @@ class RestExceptionRenderer extends ExceptionRenderer
                 'error' => array('message' => $this->error->getMessage(), 'code' => $this->error->getCode()),
                 '_serialize' => array('error')
             ));
-            $this->controller->viewClass = ucfirst(isset($this->controller->request->params['ext']) ? $this->controller->request->params['ext'] : self::DEFAULT_EXT);
-
-			      $this->controller->response->header('Content-type: ' . $this->controller->render()->type());
+            $this->controller->viewClass = ucfirst(in_array($this->controller->request->params['ext'], $this->_authorizedExt) && isset($this->controller->request->params['ext']) ? $this->controller->request->params['ext'] : self::DEFAULT_EXT);
+            $this->controller->response->header('Content-type: ' . $this->controller->render()->type());
             $this->controller->response->send();
         }
     }

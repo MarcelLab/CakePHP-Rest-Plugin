@@ -14,11 +14,13 @@ class RestComponent extends Component {
 
     const DEFAULT_EXT = 'xml';
     const DEFAULT_LIMIT = 50;
+    const DEFAULT_JSONP_CALLBACK = 'callback';
     const MAX_LIMIT = 500;
     private static $_authorizedParameters = array('conditions', 'order', 'page', 'limit', 'joins');
     private $_controller = null;
     private $_settings = null;
     private $_requestData = null;
+    private $_authorizedExt = array('xml', 'json', 'jsonp');
 
     public $components = array('RequestHandler');
 
@@ -40,14 +42,17 @@ class RestComponent extends Component {
      * @return NULL
      */
     public function startup($controller) {
+        if(!in_array($controller->request->params['ext'], $this->_authorizedExt)) throw new CakeException (sprintf('The extension "%s" is not supported', $controller->request->params['ext']));
         $this->_controller = $controller;
-        $this->_requestData = $controller->request->input('json_decode', true);
+        $this->_requestData = $this->getRequestData();
         if(! isset($controller->request->params['prefix']) &&
               empty($controller->request->params['plugin']) &&
             ! preg_match('#^admin/#', $controller->request->url) ) {
             $ext = isset($controller->request->params['ext']) ? $controller->request->params['ext'] : self::DEFAULT_EXT;
-            $controller->viewClass = ucfirst($ext);
-         }
+            if(!$this->isJSONP()) {
+                $controller->viewClass = ucfirst($ext);
+            }
+        }
     }
 
     /**
@@ -75,7 +80,7 @@ class RestComponent extends Component {
     }
 
     /**
-     * setData set and format data for a service output
+     * setData sets and formats data for a service output
      * 
      * @param array $data 
      * @param int $count 
@@ -91,6 +96,44 @@ class RestComponent extends Component {
             $data['count'] = $count;
             $data['_serialize'][] = 'count';
         }
-        $this->_controller->set($data);
+        if($this->isJSONP()) {
+            $this->displayJSONP($data);
+        } else $this->_controller->set($data);
+    }
+
+    /**
+     * getRequestData gets data from php://input or from data GET paramater in 
+     * the JSONP case
+     * 
+     * @return array
+     */
+    public function getRequestData() {
+        $requestData = $this->_controller->request->input('json_decode', true);
+        if($this->isJSONP() && isset($this->_controller->request->query['data'])) {
+            $requestData = json_decode(urldecode($this->_controller->request->query['data']), true);
+        }
+        return $requestData;
+    }
+
+    /**
+     * isJSONP checks if the extension is "jsonp"
+     * 
+     * @return NULL
+     */
+    public function isJSONP() {
+        return $this->_controller->request->params['ext'] == 'jsonp';
+    }
+
+    /**
+     * displayJSONP echoes then data wrapped in a JS function call
+     * 
+     * @param mixed $data 
+     * @return NULL
+     */
+    public function displayJSONP($data) {
+        unset($data['_serialize']);
+        $callback = isset($this->_controller->request->query['callback']) ? $this->_controller->request->query['callback'] : self::DEFAULT_JSONP_CALLBACK;
+        echo sprintf('%s(%s);', $callback, json_encode($data));
+        $this->_controller->autoRender = false;
     }
 }
