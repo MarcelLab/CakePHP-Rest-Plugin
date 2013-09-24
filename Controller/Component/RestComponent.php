@@ -42,13 +42,13 @@ class RestComponent extends Component {
      * @return NULL
      */
     public function startup($controller) {
-        if(!in_array($controller->request->params['ext'], $this->_authorizedExt)) throw new CakeException (sprintf('The extension "%s" is not supported', $controller->request->params['ext']));
+        $ext = isset($controller->request->params['ext']) ? $controller->request->params['ext'] : self::DEFAULT_EXT;
+        if(!in_array($ext, $this->_authorizedExt)) throw new CakeException (sprintf('The extension "%s" is not supported', $ext));
         $this->_controller = $controller;
         $this->_requestData = $this->getRequestData();
         if(! isset($controller->request->params['prefix']) &&
               empty($controller->request->params['plugin']) &&
             ! preg_match('#^admin/#', $controller->request->url) ) {
-            $ext = isset($controller->request->params['ext']) ? $controller->request->params['ext'] : self::DEFAULT_EXT;
             if(!$this->isJSONP()) {
                 $controller->viewClass = ucfirst($ext);
             }
@@ -121,7 +121,8 @@ class RestComponent extends Component {
      * @return NULL
      */
     public function isJSONP() {
-        return $this->_controller->request->params['ext'] == 'jsonp';
+        $ext = isset($this->_controller->request->params['ext']) ? $this->_controller->request->params['ext'] : self::DEFAULT_EXT;
+        return $ext == 'jsonp';
     }
 
     /**

@@ -24,6 +24,7 @@ class RestExceptionRenderer extends ExceptionRenderer
      */
     public function render()
     {
+        $ext = isset($this->controller->request->params['ext']) ? $this->controller->request->params['ext'] : self::DEFAULT_EXT;
         if( isset($this->controller->request->params['prefix']) || 
             ! empty($this->controller->request->params['plugin']) ||
             preg_match('#^admin/#', $this->controller->request->url) ) {
@@ -33,7 +34,7 @@ class RestExceptionRenderer extends ExceptionRenderer
                 'error' => array('message' => $this->error->getMessage(), 'code' => $this->error->getCode()),
                 '_serialize' => array('error')
             ));
-            $this->controller->viewClass = ucfirst(in_array($this->controller->request->params['ext'], $this->_authorizedExt) && isset($this->controller->request->params['ext']) ? $this->controller->request->params['ext'] : self::DEFAULT_EXT);
+            $this->controller->viewClass = ucfirst(in_array($ext, $this->_authorizedExt) && isset($ext) ? $ext : self::DEFAULT_EXT);
             $this->controller->response->header('Content-type: ' . $this->controller->render()->type());
             $this->controller->response->send();
         }
