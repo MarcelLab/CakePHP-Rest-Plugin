@@ -86,6 +86,14 @@ class RestComponent extends Component {
         $this->_recursivity = self::RECURSIVITY_DEFAULT;
         $this->setData($result);
     }
+    
+    
+    /**
+     * Method called to allow total overload of request's option.
+     */
+    public function resetRequestData(){
+    	$this->_requestData = array();
+    }
 
     /**
      * setData sets and formats data for a service output
