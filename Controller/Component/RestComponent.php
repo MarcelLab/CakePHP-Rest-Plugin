@@ -43,7 +43,7 @@ class RestComponent extends Component {
      * @param Object $controller
      * @return NULL
      */
-    public function startup($controller) {
+    public function startup(Controller $controller) {
         $ext = isset($controller->request->params['ext']) ? $controller->request->params['ext'] : self::DEFAULT_EXT;
         if(!in_array($ext, $this->_authorizedExt)) throw new CakeException (sprintf('The extension "%s" is not supported', $ext));
         $this->_controller = $controller;
