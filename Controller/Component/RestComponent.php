@@ -55,6 +55,7 @@ class RestComponent extends Component {
                 $controller->viewClass = ucfirst($ext);
             }
         }
+
     }
 
     /**
@@ -67,7 +68,7 @@ class RestComponent extends Component {
      * @return NULL
      */
     public function requester($options=array()) {
-        $parameters = array('recursive' => $this->_recursivity);
+    	$parameters = array('recursive' => $this->_recursivity);
         foreach(self::$_authorizedParameters as $parameterName) {
             if(isset($this->_requestData[$parameterName])) $parameters[$parameterName] = $this->_requestData[$parameterName];
             if(isset($options[$parameterName])) $parameters[$parameterName] = $options[$parameterName];
@@ -128,14 +129,14 @@ class RestComponent extends Component {
     }
 
     /**
-     * getRequestData gets data from php://input or from data GET paramater in 
-     * the JSONP case
+     * getRequestData gets data from php://input or from data GET paramater in the JSONP case
      * 
      * @return array
      */
-    public function getRequestData() {
-        $requestData = $this->_controller->request->input('json_decode', true);
-        if($this->isJSONP() && isset($this->_controller->request->query['data'])) {
+    public function getRequestData(Controller $controller = null) {
+    	if($this->_controller === null) $this->_controller = $controller;
+    	$requestData = $this->_controller->request->input('json_decode', true);
+    	if($this->isJSONP() && isset($this->_controller->request->query['data'])) {
             $requestData = json_decode(urldecode($this->_controller->request->query['data']), true);
         }
         return $requestData;
