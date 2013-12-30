@@ -12,15 +12,17 @@
  */
 class RestComponent extends Component {
 
-    const DEFAULT_EXT = 'xml';
+    const DEFAULT_EXT = 'json';
     const DEFAULT_LIMIT = 50;
     const DEFAULT_JSONP_CALLBACK = 'callback';
     const MAX_LIMIT = 500;
-    private static $_authorizedParameters = array('conditions', 'order', 'page', 'limit', 'joins');
+    const RECURSIVITY_DEFAULT = -1;
+    private static $_authorizedParameters = array('conditions', 'order', 'page', 'limit', 'fields');
     private $_controller = null;
     private $_settings = null;
     private $_requestData = null;
     private $_authorizedExt = array('xml', 'json', 'jsonp');
+    private $_recursivity = self::RECURSIVITY_DEFAULT;
 
     public $components = array('RequestHandler');
 
@@ -41,7 +43,7 @@ class RestComponent extends Component {
      * @param Object $controller
      * @return NULL
      */
-    public function startup($controller) {
+    public function startup(Controller $controller) {
         $ext = isset($controller->request->params['ext']) ? $controller->request->params['ext'] : self::DEFAULT_EXT;
         if(!in_array($ext, $this->_authorizedExt)) throw new CakeException (sprintf('The extension "%s" is not supported', $ext));
         $this->_controller = $controller;
@@ -64,18 +66,24 @@ class RestComponent extends Component {
      * 
      * @return NULL
      */
-    public function requester() {
-        $parameters = array('recursive' => -1);
+    public function requester($options=array()) {
+        $parameters = array('recursive' => $this->_recursivity);
         foreach(self::$_authorizedParameters as $parameterName) {
             if(isset($this->_requestData[$parameterName])) $parameters[$parameterName] = $this->_requestData[$parameterName];
+            if(isset($options[$parameterName])) $parameters[$parameterName] = $options[$parameterName];
         }
-        $parameters['fields'] = isset($this->_settings['fields']) ? $this->_settings['fields'] : array();
+        if(isset($options['contain'])) $parameters['contain'] = $options['contain'];
+        if(isset($options['group'])) $parameters['group'] = $options['group'];
+        if(empty($parameters['fields'])){
+        	$parameters['fields'] = (isset($this->_settings['fields']) ? $this->_settings['fields'] : array());
+        }
         if(!isset($parameters['limit'])) {
             $parameters['limit'] = self::DEFAULT_LIMIT;
         } else if($parameters['limit'] > self::MAX_LIMIT) {
             $parameters['limit'] = self::MAX_LIMIT;
         }
         $result = $this->_controller->{$this->_controller->modelClass}->find('all', $parameters);
+        $this->_recursivity = self::RECURSIVITY_DEFAULT;
         $this->setData($result);
     }
 
@@ -99,6 +107,16 @@ class RestComponent extends Component {
         if($this->isJSONP()) {
             $this->displayJSONP($data);
         } else $this->_controller->set($data);
+    }
+    
+    /**
+     * setRecursivity sets recursivity to the dedicated value. It will be applied only to the following request.
+     *
+     * @param int $value
+     * @return NULL
+     */
+    public function setRecursivity($value=0) {
+    	$this->_recursivity = $value;
     }
 
     /**

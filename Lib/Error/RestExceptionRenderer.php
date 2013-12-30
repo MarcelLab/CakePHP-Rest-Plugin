@@ -14,7 +14,7 @@ App::uses('ExceptionRenderer', 'Error');
  */
 class RestExceptionRenderer extends ExceptionRenderer
 {
-    const DEFAULT_EXT = 'xml';
+    const DEFAULT_EXT = 'json';
     private $_authorizedExt = array('xml', 'json');
 
     /**
