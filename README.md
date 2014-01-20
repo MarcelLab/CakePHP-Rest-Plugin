@@ -30,3 +30,5 @@ The result will a list of records encoded in JSON or in XML (depends on the exte
 
 For example you can have this parameters (they respect the CakePHP convention)
 {"limit":"2", "page":"1", "order":"firstname DESC", "conditions":{"firstname !=": "John"}}
+
+Use of cache is eased by the bootstrap file where it can be precisely set. A dedicated behavior allows managing the cache flush and its usage can be found in the requester method.
