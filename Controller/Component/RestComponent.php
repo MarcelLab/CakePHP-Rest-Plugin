@@ -82,7 +82,18 @@ class RestComponent extends Component {
         } else if($parameters['limit'] > self::MAX_LIMIT) {
             $parameters['limit'] = self::MAX_LIMIT;
         }
-        $result = $this->_controller->{$this->_controller->modelClass}->find('all', $parameters);
+        if(isset($this->_settings['useCache']) && $this->_settings['useCache']) { 
+        	$url = $this->_controller->request->here;
+        	$url .= isset($parameters['conditions']) ? serialize($parameters['conditions']) : '';
+        	$cacheFileName = md5($url);
+        	$result = Cache::read($cacheFileName, 'request');
+        }
+        if (empty($result)) {
+        	$result = $this->_controller->{$this->_controller->modelClass}->find('all', $parameters);
+        }
+        if(isset($this->_settings['useCache']) && $this->_settings['useCache']){
+        	Cache::write($cacheFileName, $result, 'request');
+        }
         $this->_recursivity = self::RECURSIVITY_DEFAULT;
         $this->setData($result);
     }
