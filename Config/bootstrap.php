@@ -11,3 +11,10 @@
  */
 Configure::write('Exception.renderer', 'Rest.RestExceptionRenderer');
 Router::parseExtensions();
+
+Cache::config('request', array(
+'engine' => 'File',
+'duration' => '+5 mins',
+'path' => CACHE,
+'prefix' => 'request_'
+));
