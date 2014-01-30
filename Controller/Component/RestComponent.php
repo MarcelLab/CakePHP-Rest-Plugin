@@ -49,12 +49,13 @@ class RestComponent extends Component {
         $this->_controller = $controller;
         $this->_requestData = $this->getRequestData();
         if(! isset($controller->request->params['prefix']) &&
-              empty($controller->request->params['plugin']) &&
+            empty($controller->request->params['plugin']) &&
             ! preg_match('#^admin/#', $controller->request->url) ) {
-            if(!$this->isJSONP()) {
-                $controller->viewClass = ucfirst($ext);
+                if(!$this->isJSONP()) {
+                    $controller->viewClass = ucfirst($ext);
+                }
             }
-        }
+
     }
 
     /**
@@ -75,7 +76,7 @@ class RestComponent extends Component {
         if(isset($options['contain'])) $parameters['contain'] = $options['contain'];
         if(isset($options['group'])) $parameters['group'] = $options['group'];
         if(empty($parameters['fields'])){
-        	$parameters['fields'] = (isset($this->_settings['fields']) ? $this->_settings['fields'] : array());
+            $parameters['fields'] = (isset($this->_settings['fields']) ? $this->_settings['fields'] : array());
         }
         if(!isset($parameters['limit'])) {
             $parameters['limit'] = self::DEFAULT_LIMIT;
@@ -87,6 +88,14 @@ class RestComponent extends Component {
         $this->setData($result);
     }
 
+
+    /**
+     * Method called to allow total overload of request's option.
+     */
+    public function resetRequestData(){
+        $this->_requestData = array();
+    }
+
     /**
      * setData sets and formats data for a service output
      * 
@@ -94,21 +103,34 @@ class RestComponent extends Component {
      * @param int $count 
      * @return NULL
      */
-    public function setData($data, $count = null) {
-        $data = array(
-            'result'     => $data,
-            'service'    => $this->_controller->params['action'],
-            '_serialize' => array('result', 'service')
-        );
-        if($count) {
-            $data['count'] = $count;
-            $data['_serialize'][] = 'count';
+    public function setData($data, $count = null, $modelName = null) {
+
+        if(!is_null($modelName)) {
+            $data = json_encode(self::normalize($data, $modelName));
+        } else {
+            $data = array(
+                'result'     => $data,
+                'service'    => $this->_controller->params['action'],
+                '_serialize' => array('result', 'service')
+            );
+
+            if($count) {
+                $data['count'] = $count;
+                $data['_serialize'][] = 'count';
+            }
         }
+
         if($this->isJSONP()) {
             $this->displayJSONP($data);
-        } else $this->_controller->set($data);
+        } elseif(!is_null($modelName)) {
+            header('Content-type: application/json');
+            $this->_controller->autoRender = false;
+            echo $data;
+        } else {
+            $this->_controller->set($data);
+        }
     }
-    
+
     /**
      * setRecursivity sets recursivity to the dedicated value. It will be applied only to the following request.
      *
@@ -116,16 +138,16 @@ class RestComponent extends Component {
      * @return NULL
      */
     public function setRecursivity($value=0) {
-    	$this->_recursivity = $value;
+        $this->_recursivity = $value;
     }
 
     /**
-     * getRequestData gets data from php://input or from data GET paramater in 
-     * the JSONP case
+     * getRequestData gets data from php://input or from data GET paramater in the JSONP case
      * 
      * @return array
      */
-    public function getRequestData() {
+    public function getRequestData(Controller $controller = null) {
+        if($this->_controller === null) $this->_controller = $controller;
         $requestData = $this->_controller->request->input('json_decode', true);
         if($this->isJSONP() && isset($this->_controller->request->query['data'])) {
             $requestData = json_decode(urldecode($this->_controller->request->query['data']), true);
@@ -154,5 +176,13 @@ class RestComponent extends Component {
         $callback = isset($this->_controller->request->query['callback']) ? $this->_controller->request->query['callback'] : self::DEFAULT_JSONP_CALLBACK;
         echo sprintf('%s(%s);', $callback, json_encode($data));
         $this->_controller->autoRender = false;
+    }
+
+    public static function normalize($data, $modelName) {
+        $normalizedData = array();
+        foreach($data as $record) {
+            if(isset($record[$modelName])) $normalizedData[] = $record[$modelName];
+        }
+        return $normalizedData;
     }
 }
