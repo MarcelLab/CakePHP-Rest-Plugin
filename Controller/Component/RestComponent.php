@@ -106,7 +106,7 @@ class RestComponent extends Component {
     public function setData($data, $count = null, $modelName = null, $encapsulation = false) {
 
         if(!is_null($modelName)) {
-            $data = json_encode(self::normalize($data, $modelName));
+            $data = json_encode(self::normalize($data, $modelName, $count));
         } else {
             $data = array(
                 'result'     => $data,
@@ -180,8 +180,9 @@ class RestComponent extends Component {
         $this->_controller->autoRender = false;
     }
 
-    public static function normalize($data, $modelName) {
+    public static function normalize($data, $modelName, $count=null) {
         $normalizedData = array();
+        if($count) $normalizedData['count'] = $count;
         foreach($data as $record) {
             if(isset($record[$modelName])) $normalizedData[] = $record[$modelName];
         }
